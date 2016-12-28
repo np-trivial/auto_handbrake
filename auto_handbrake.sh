@@ -2,7 +2,7 @@
 
 HANDBRAKECLI=/usr/local/bin/HandBrakeCLI
 LOG=/var/log/auto_handbrake.log
-TARGETPATH=/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Movies
+TARGETPATH="/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Movies"
 
 if [ $UID -ne 0 ]; then
 	echo "Must run as root; exiting"
