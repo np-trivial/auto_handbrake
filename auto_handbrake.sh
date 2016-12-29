@@ -39,7 +39,7 @@ while [ 1 ]; do
 	# working version
 	#$HANDBRAKECLI -i /dev/cd0 -o $TARGETPATH/"$DVDTITLE".mp4 --main-feature --preset="Android Tablet" &>>/var/log/HandBrakeCLI.log && echo $DVDTITLE >> $LOG && eject /dev/cd0
 	# an attempt to add subtitles to the working version
-	$HANDBRAKECLI -i /dev/cd0 -o $TARGETPATH/"$DVDTITLE".mp4 --main-feature --preset="High Profile" -N eng &>>/var/log/HandBrakeCLI.log && echo $DVDTITLE >> $LOG && eject /dev/cd0
+	$HANDBRAKECLI -i /dev/cd0 -o "$TARGETPATH/$DVDTITLE".mp4 --main-feature --preset="High Profile" -N eng &>>/var/log/HandBrakeCLI.log && echo $DVDTITLE >> $LOG && eject /dev/cd0
 	
 	#$HANDBRAKECLI -i /dev/cd0 -o $TARGETPATH/"$DVDTITLE".mp4 --preset="High Profile" &>/var/log/HandBrakeCLI.log 
 done
