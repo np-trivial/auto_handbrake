@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 HANDBRAKECLI=/usr/local/bin/HandBrakeCLI
 LOG=/var/log/auto_handbrake.log
 TARGETPATH="/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Movies"
+# rip everthing longer that $MINDURATION seconds
+# set to "" to just rip what HandBrake detects as the "main feature"
+MINDURATION="300"
 
 if [ $UID -ne 0 ]; then
 	echo "Must run as root; exiting"
@@ -24,11 +27,12 @@ while [ 1 ]; do
 	fgrep -qs "$DVDTITLE" $LOG 
 	if [ $? != 1 ] ; then
 		# title was not in list of previously ripped dvds
+		echo "DVD already ripped, ejecting"
 		eject /dev/cd0
 		continue
 	fi
 
-	#echo "rip it"
+	echo "New DVD; ripping"
 	# give the drive time to calm before trying to rip
 	sleep 10
 
@@ -36,10 +40,20 @@ while [ 1 ]; do
 	# log that we ripped this title
 	# eject disk
 
-	# working version
-	#$HANDBRAKECLI -i /dev/cd0 -o $TARGETPATH/"$DVDTITLE".mp4 --main-feature --preset="Android Tablet" &>>/var/log/HandBrakeCLI.log && echo $DVDTITLE >> $LOG && eject /dev/cd0
-	# an attempt to add subtitles to the working version
-	$HANDBRAKECLI -i /dev/cd0 -o "$TARGETPATH/$DVDTITLE".mp4 --main-feature --preset="High Profile" -N eng &>>/var/log/HandBrakeCLI.log && echo $DVDTITLE >> $LOG && eject /dev/cd0
-	
-	#$HANDBRAKECLI -i /dev/cd0 -o $TARGETPATH/"$DVDTITLE".mp4 --preset="High Profile" &>/var/log/HandBrakeCLI.log 
+	# if there's anything over an hour long, use "main feature" mode
+	ismovie=`$HANDBRAKECLI -i /dev/cd0 -t 0  --min-duration 3600 |&  egrep "^[+] title [[:digit:]]+" | egrep -o "[[:digit:]]+"`
+
+	# rip just main title if $MINDURATION == 0
+	if [ -z $ismovie ]; then
+		echo "Ripping all titles $MINDURATION seconds or longer"
+		for i in `$HANDBRAKECLI -i /dev/cd0 -t 0  --min-duration 300 |&  egrep "^[+] title [[:digit:]]+" | egrep -o "[[:digit:]]+"`; do 
+			echo HandBrake $DVDTITLE-Title$i;
+			$HANDBRAKECLI -i /dev/cd0 -o "$TARGETPATH/$DVDTITLE-Title$i".mp4 --main-feature --preset="High Profile" -N eng &>>/var/log/HandBrakeCLI.log 
+		done;
+		echo $DVDTITLE >> $LOG
+		eject /dev/cd0
+	else	
+		echo "Ripping main feature"
+		$HANDBRAKECLI -i /dev/cd0 -o "$TARGETPATH/$DVDTITLE".mp4 --main-feature --preset="High Profile" -N eng &>>/var/log/HandBrakeCLI.log && echo $DVDTITLE >> $LOG && eject /dev/cd0
+	fi
 done
